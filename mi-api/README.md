@@ -70,128 +70,27 @@ I ara anem a /opt/lampp/htdocs/mi-api/public i editem index.php on afegirem tot 
  
 Contingut Index.php:
 
-El següent codi serà  per carregar la api (codi que ve per defecte quan es crea una api nova):
+El codi inicial serà per carregar la API i posteriorment definim les funciones que necessitem:
 
-<?php
-if (PHP_SAPI == 'cli-server') {
-    // To help the built-in PHP dev server, check if the request was actually for
-    // something which should probably be served as a static file
-    $url  = parse_url($_SERVER['REQUEST_URI']);
-    $file = __DIR__ . $url['path'];
-    if (is_file($file)) {
-        return false;
-    }
-}
-
-require __DIR__ . '/../vendor/autoload.php';
-
-session_start();
-
-// Instantiate the app
-$settings = require __DIR__ . '/../src/settings.php';
-$app = new \Slim\App($settings);
-
-// Set up dependencies
-require __DIR__ . '/../src/dependencies.php';
-
-// Register middleware
-require __DIR__ . '/../src/middleware.php';
-
-// Register routes
-require __DIR__ . '/../src/routes.php';
-
-// Run app
-$app->run();
-
-Funcions que hem creat: 
+Funcions que hem creat al fitxer index.php: 
 
 Funció per fer la connexió a la base de dades:
-
-function getConnection() {
-    $dbhost="127.0.0.1";
-    $dbuser="root";
-    $dbpass="";
-    $dbname="api_db";
-    $dbh = new PDO("mysql:host=$dbhost;dbname=$dbname", $dbuser, $dbpass);
-    $dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    return $dbh;
-}
-
  
-Funció per obtenir Hostings quan és fa un GET a la URL http://mi-api/api/v1/hostings, fa la connexió a la base de dades i fa un select all:
-function obtenerHostings($response) {
-    $sql = "SELECT * FROM Hosting";
-    try {
-        $stmt = getConnection()->query($sql);
-        $hosting = $stmt->fetchAll(PDO::FETCH_OBJ);
-        $db = null;
+Funció per obtenir Hostings quan és fa un GET a la URL http://mi-api/api/v1/hostings, fa la connexió a la base de dades i fa un select all.
 
-        return json_encode($hosting);
-    } catch(PDOException $e) {
-        echo '{"error":{"text":'. $e->getMessage() .'}}';
-    }
-}
 
-Funció per afegir Hostings, fem un POST a http://mi-api/api/v1/crear passant la info necessària per crear el hosting (Nom, cores, memòria, disc) i és fa un insert a la bdd amb aquestes dades que li hem passat:
+Funció per afegir Hostings, fem un POST a http://mi-api/api/v1/crear passant la info necessària per crear el hosting (Nom, cores, memòria, disc) i és fa un insert a la bdd amb aquestes dades que li hem passat.
 
-function agregarHosting($request) {
-    $emp = json_decode($request->getBody());
-    $sql = "INSERT INTO Hosting (Nombre, Cores, Memoria, Disco) VALUES (:Nombre, :Cores, :Memoria, :Disco)";
-    try {
-        $db = getConnection();
-        $stmt = $db->prepare($sql);
-        $stmt->bindParam("Nombre", $emp->Nombre);
-        $stmt->bindParam("Cores", $emp->Cores);
-        $stmt->bindParam("Memoria", $emp->Memoria);
-        $stmt->bindParam("Disco", $emp->Disco);
-        $stmt->execute();
-        $emp->id = $db->lastInsertId();
-        $db = null;
-        echo json_encode($emp);
-    } catch(PDOException $e) {
-        echo '{"error":{"text":'. $e->getMessage() .'}}';
-    }
-}
+
 
  
-Funció per actualitzar hostings fent un PUT a la url http://mi-api/api/v1/actualizar/{id}, aquesta funció agafarà els paràmetres amb el PUT i li farà un UPDATE amb les dades que li hem passat:
+Funció per actualitzar hostings fent un PUT a la url http://mi-api/api/v1/actualizar/{id}, aquesta funció agafarà els paràmetres amb el PUT i li farà un UPDATE amb les dades que li hem passat.
 
-function actualizarHosting($request) {
-    $emp = json_decode($request->getBody());
-    $id = $request->getAttribute('id');
-    $sql = "UPDATE Hosting SET Nombre=:Nombre, Cores=:Cores, Memoria=:Memoria, Disco=:Disco WHERE Id=:id";
-    try {
-        $db = getConnection();
-        $stmt = $db->prepare($sql);
-        $stmt->bindParam("Nombre", $emp->Nombre);
-        $stmt->bindParam("Cores", $emp->Cores);
-        $stmt->bindParam("Memoria", $emp->Memoria);
-        $stmt->bindParam("Disco", $emp->Disco);
-        $stmt->bindParam("id", $id);
-        $stmt->execute();
-        $db = null;
-        echo json_encode($emp);
-    } catch(PDOException $e) {
-        echo '{"error":{"text":'. $e->getMessage() .'}}';
-    }
-}
 
-Finalment tenim la funció d’eliminar, que és fer un DELETE a http://mi-api/api/v1/eliminar/{id} del hosting, eliminarà el hosting mitjançant la id que li hem especificat fent un DELETE FROM WHERE ID = {id} a la base de dades:
 
-function eliminarHosting($request) {
-    $id = $request->getAttribute('id');
-    $sql = "DELETE FROM Hosting WHERE Id=:id"; 
-    try {
-        $db = getConnection();
-        $stmt = $db->prepare($sql);
-        $stmt->bindParam("id", $id);
-        $stmt->execute();
-        $db = null;
-        echo '{"error":{"text":"Se ha eliminado el Hosting"}}';
-    } catch(PDOException $e) {
-        echo '{"error":{"text":'. $e->getMessage() .'}}';
-    }
-}
+Finalment tenim la funció d’eliminar, que és fer un DELETE a http://mi-api/api/v1/eliminar/{id} del hosting, eliminarà el hosting mitjançant la id que li hem especificat fent un DELETE FROM WHERE ID = {id} a la base de dades.
+
+
  
 
 Com podem fer els mètodes POST,GET,DELETE,PUT a les URL’s que especifiquem? per exemple podem utilitzar programes com POSTMAN , que seria el meu cas, he desat tots els mètodes anteriors fent peticions a les url’s especificades anteriorment.
